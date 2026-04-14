@@ -1,0 +1,60 @@
+1. A Model és a Service (A Rendszer Alapja)
+Amikor megkapod az új feladatot (pl. Ételek helyett Autók vagy Könyvek lesznek), ezzel kezdd!
+
+Osztály és Mezők: Cseréld ki az osztály nevét (Food -> Car). Írd át a változókat az új feladat szerint (pl. String brand, int topSpeed).
+
+⚠️ KÖTELEZŐ ÚJRAGENERÁLÁS: Ha átírtál egy változót, az összes régi Gettert, Settert, Konstruktort, equals()-t és hashCode()-ot töröld ki, és generáltasd újra az IntelliJ-vel (Alt + Insert)! Különben a régi neveket fogja keresni.
+
+XML Annotációk: Tedd rá az osztályra a @ZH1Serializable taget. Figyelj a kivételre! A feladat mindig kér egy olyan mezőt, aminek fix neve kell legyen az XML-ben (pl. az árnál @ZH1Element(text = "PRICE_FT")). Ezt ne felejtsd le a megfelelő változóról!
+
+A Repository / Service: A Service-ben írd át a save() metódus paramétereit az új osztályod mezőire.
+
+2. Az URL-ek és a Routing (A Közlekedés)
+Ha megvan az új témád, minden végpontot át kell nevezned, hogy logikus legyen.
+
+Servlet Annotációk: A @WebServlet("/Food") legyen mondjuk @WebServlet("/Car").
+
+A Redirectek: A Servlet végén a resp.sendRedirect(req.getContextPath() + "/Food"); részt is írd át az újra.
+
+A linkek a JSP-ben: Minden <a href="${pageContext.request.contextPath}/Food..."> és <form action="..."> mutasson az új Servletre!
+
+3. Az Űrlap (add.jsp) és az Olvasás (AddServlet)
+Itt csúszik el a legtöbb vizsga, erre nagyon figyelj!
+
+A name attribútumok: A JSP-ben a beviteli mezőknek adsz egy nevet: <input type="text" name="carBrand">.
+
+A Servletben: A req.getParameter("carBrand") szövegének HAJSZÁLPONTOSAN meg kell egyeznie a JSP-ben lévő name attribútummal! Ha a JSP-ben nagybetűs, itt is az legyen.
+
+4. A Lista és a JSP (list.jsp)
+A Táblázat fejlécei: Írd át a <th> tageket az új témára.
+
+A JSTL Kiírás: A <c:forEach> cikluson belül az objektumod property-jeit a Getterek alapján hívod meg. Ha a metódus getTopSpeed(), akkor a JSP-ben ${f.topSpeed} lesz (kisbetűvel kezdve).
+
+5. A Biztonsági Szűrő (Filter)
+A 8-as feladat mindig egy trükkös filter. Két dolgot kell azonnal átírnod benne:
+
+Melyik URL-t védjük? Az if(req.getRequestURI().endsWith("/AddValami")) sorban írd be az Új Elem felvételére szolgáló Servlet nevét.
+
+Mit vizsgálunk? A req.getParameter("...") mezőbe írd be annak a kötelező mezőnek a nevét, amit az add.jsp-ben is használtál (pl. "name" vagy "carBrand").
+
+6. A Kedvenc és a Cookie (Tag és Servlet)
+A Süti neve: Válassz egy nevet (pl. "favouriteid" vagy "favcar"). Ezt a stringet három helyen kell pontosan ugyanúgy leírnod:
+
+A list.jsp-ben a rejtett mezőnél: <input type="hidden" name="favouriteid"...>
+
+A FoodServlet doPost metódusában: req.getParameter("favouriteid") és new Cookie("favouriteid", ...)
+
+A FavouriteTag.java fájlban: cookie.getName().equals("favouriteid")
+
+A Kiírt Szöveg: A FavouriteTag-ben írd át a köszöntést a feladat szerinti pontos szövegre (pl. "A kedvenc autód: ...").
+
+⚠️ A Legnagyobb Buktatók (A "Lefejelő" hibák)
+A Git (0. feladat): Lehet akármilyen tökéletes a kódod, ha nincs Git develop ág, ha nem commitolsz feladatonként, vagy elfelejted a Tag-et, a tanár ránézés nélkül 0 pontot ad. Ezzel kezdd és ezt csináld folyamatosan!
+
+Karakterkódolás: A Filter-ben kötelező az első két sor:
+req.setCharacterEncoding("UTF-8");
+res.setCharacterEncoding("UTF-8");
+
+Mappa nevek: A layout.tag szigorúan a webapp/WEB-INF/tags/ mappában legyen, kisbetűkkel! Ha elrontod, jön az 500-as Internal Server Error.
+
+Beragadt Tomcat: Ha átírtad a kódot, de a böngészőben még mindig a régi hibát látod, vagy 500-as hibát kapsz: Állítsd le a szervert -> Maven fül -> Lifecycle -> clean -> Újraindít!
