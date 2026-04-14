@@ -1,0 +1,66 @@
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee" version="6.0">
+    <servlet>
+        <servlet-name>FoodServlet</servlet-name>
+        <servlet-class>hu.pte.mik.gyakzh1.servlet.FoodServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>FoodServlet</servlet-name>
+        <url-pattern>/Food</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AddFoodServlet</servlet-name>
+        <servlet-class>hu.pte.mik.gyakzh1.servlet.AddFoodServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AddFoodServlet</servlet-name>
+        <url-pattern>/AddFood</url-pattern>
+    </servlet-mapping>
+
+    <filter>
+        <filter-name>FoodFilter</filter-name>
+        <filter-class>hu.pte.mik.gyakzh1.filter.FoodFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>FoodFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+</web-app>
+
+1. A Package nevek egyeztetése
+A feltöltött Java fájljaidban (pl. FoodServlet.java) a package:
+package hu.pte.mik.gyakzh1.servlet;
+De az általad írt web.xml tervezetben ez szerepelt:
+hu.pte.mik.prog4.zh1.servlet.FoodServlet
+
+Javítás: A web.xml-ben írd át az összes osztály útvonalát úgy, hogy gyakzh1 legyen benne a prog4.zh1 helyett, különben ClassNotFoundException-t kapsz!
+
+2. A Filter URL mintája
+A FoodFilter.java-ban a kódod már tartalmaz egy okos vizsgálatot:
+if (req.getRequestURI().endsWith("/AddFood") && ...)
+Mivel a Java kódod már szűri, hogy csak az /AddFood kérésnél dobjon hibát, a web.xml-ben nyugodtan (és a feladat szerint helyesen) állítsd a mintát mindenre:
+<url-pattern>/*</url-pattern>
+
+3. A Filter osztály neve
+A feltöltött fájlod neve FoodFilter.java. A web.xml-ben viszont ezt írtad:
+<filter-class>...filter.filter</filter-class>
+Javítás: Ezt is írd át a pontos osztálynévre: hu.pte.mik.gyakzh1.filter.FoodFilter.
+
+
+
+
+1. Az annotációk törlése
+A Java fájljaid tetejéről (a class deklarációja fölül) töröld ki a következőket:
+Servletek esetén: Töröld a @WebServlet("/Food") és @WebServlet("/AddFood") sorokat.
+Filter esetén: Töröld a @WebFilter("/*") sort.
+Importok: Az import jakarta.servlet.annotation.WebServlet; és import jakarta.servlet.annotation.WebFilter; sorokat is kitörölheted (vagy az IntelliJ magától szürkíteni fogja őket, mert már nem használod).
+
+2. Miért "másabb" ez mégis?
+Bár a kód ugyanaz marad, a működésben van egy fontos különbség:
+Annotációval: A Tomcat a szerver indulásakor "végigszalad" az összes Java osztályodon, és megkeresi a kukaccal (@) jelölt részeket.
+web.xml-lel: A Tomcat nem keresgél a Java kódodban, hanem szigorúan csak az XML-ben leírt utasításokat követi. Ha ott elírsz egy osztálynevet (például hu.pte.mik.gyakzh1.servlet.FoodServlet helyett véletlenül Foodservat-ot írsz), akkor hiába van ott a Java fájlod a projektben, a szerver úgy fog tenni, mintha nem létezne, és 404 Not Found hibát kapsz.
+
+3. Ellenőrzési lista a web.xml-hez:
+<servlet-class> és <filter-class>: Ellenőrizd, hogy a pontokkal elválasztott útvonal (package + osztálynév) karakterre pontosan megegyezik-e a Java fájljaid elején lévő package sorral és az osztály nevével.
+Mappahelyszín: A web.xml fájlnak kötelezően a webapp/WEB-INF/ mappában kell lennie. Ha véletlenül csak a webapp mappába teszed, nem fog működni.
+Maven Compile: Mivel az XML módosítása nem érinti a Java kódot, egy mvn clean compile futtatása után indítsd újra a Tomcatet, hogy biztosan az új konfiguráció élesedjen.
