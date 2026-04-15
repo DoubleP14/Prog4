@@ -1,0 +1,166 @@
+package hu.pte.mik.prog4.filter;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Optional;
+
+public class LoggerFilter extends HttpFilter {
+
+    private static final Logger LOGGER = Logger.getLogger(LoggerFilter.class);
+
+    @Override
+    protected void doFilter(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws IOException, ServletException {
+        LOGGER.info(req.getServletPath());
+        req.getParameterMap()
+                .forEach((key, value) -> LOGGER.info("Name: " + key + ", value: " + Arrays.toString(value)));
+
+
+        Optional<String> forbiddenName = Optional.ofNullable(req.getParameterMap().get("name"))
+                                                            .stream()
+                .flatMap(Arrays::stream)
+                .filter("FooBar"::equals)
+                .findFirst();
+
+        if(forbiddenName.isPresent()) {
+            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        } else {
+            super.doFilter(req, res, chain);
+        }
+
+        LOGGER.info(res.getStatus());
+    }
+}
+
+
+Ez a LoggerFilter
+
+
+
+package hu.pte.mik.prog4.model;
+
+import java.util.Objects;
+
+public abstract class Client {
+
+    private Long id;
+    private String name;
+    private String address;
+
+    public Client(Long id, String name, String address) {
+        this.id = id;
+        this.name = name;
+        this.address = address;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Client client = (Client) o;
+        return Objects.equals(id, client.id) && Objects.equals(name, client.name) && Objects.equals(address, client.address);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, address);
+    }
+
+    @Override
+    public String toString() {
+        return "Client{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", address='" + address + '\'' +
+                '}';
+    }
+
+}
+
+
+Ez az absztrakt class
+
+
+package hu.pte.mik.prog4.tag;
+
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.JspWriter;
+import jakarta.servlet.jsp.tagext.SimpleTagSupport;
+
+import java.io.IOException;
+
+public class HelloTag extends SimpleTagSupport {
+
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public void doTag() throws JspException, IOException {
+        JspWriter out = this.getJspContext().getOut();
+
+        out.print("Hello there " + this.name + "!");
+    }
+}
+
+
+Ez a HelloTag
+
+
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration debug="true"
+                     xmlns:log4j='http://jakarta.apache.org/log4j/'>
+
+    <appender name="console" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n" />
+        </layout>
+    </appender>
+
+    <root>
+        <level value="DEBUG" />
+        <appender-ref ref="console" />
+    </root>
+
+</log4j:configuration>
+
+
+Ez a log4j.xml
