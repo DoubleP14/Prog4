@@ -1,0 +1,88 @@
+1. RÉSZ: Adatbázis & Docker Csapdák (A legfájdalmasabb hibák) 🐳
+Ezek azok a hibák, amik miatt órákig állhat a projekt, pedig a kódod hibátlan.
+
+A "Beragadt Volume" átka:
+
+A hiba: Hiába írod át a docker-compose.yml-ben a jelszót vagy a usert, a Docker nem hajlandó bevenni.
+
+Az ok: A Docker csak akkor hozza létre a felhasználót a megadott jelszóval, ha a hozzárendelt mappa (Volume) teljesen üres. Ha már van benne valami korábbról, a Docker ignorálja az új beállításaidat.
+
+A megoldás: Adj új nevet a volume-nak (pl. pgdata17 helyett pgdata_v2), vagy töröld a régit a docker volume rm <név> paranccsal.
+
+A localhost vs 127.0.0.1 szabály:
+
+A hiba: A Node.js (pl. Prisma) nem tud csatlakozni a Dockerhez, pedig a port nyitva van.
+
+Az ok: A localhost szót a modern rendszerek IPv6 címként (::1) próbálják feloldani, míg a Docker IPv4-en (127.0.0.1) fut. Elbeszélnek egymás mellett.
+
+A megoldás: A .env fájlokban KIZÁRÓLAG a 127.0.0.1 IP-címet használd adatbázis URL-nél!
+
+A Fantom Adatbázis (Port ütközés):
+
+A hiba: Belépsz az adatbázisba, de nem látod a tábláidat, vagy a kódod Authentication failed hibát dob a jó jelszóra is.
+
+Az ok: A gépeden fut egy natívan telepített adatbázis (pl. PostgreSQL az 5432-n, vagy MySQL a 3306-on), és a kódod abba lép be, nem pedig a Dockerbe.
+
+A megoldás: Költöztesd a Docker konténert egy másik portra! Pl. Postgres esetén 5433:5432, MySQL esetén 3307:3306.
+
+Az "Arany Teszt" (Szigetelés):
+
+Ha a backend (Prisma, Java, stb.) nem tud csatlakozni, mindig nyisd meg a DataGrip-et (vagy DBeaver-t)! Próbálj meg belépni ugyanazokkal az adatokkal.
+
+Ha a DataGrip beenged -> A kódodban (backend) van a hiba (pl. rossz .env).
+
+Ha a DataGrip SE enged be -> Az adatbázis/Docker rossz, a kódod ártatlan.
+
+2. RÉSZ: Egy Webes/Backend Vizsgafeladat Menetrendje 🗺️
+Ha kapsz egy komplett feladatot (mint az ODT fájlban), a legnagyobb hiba, ha összevissza kezdesz el kódolni. Mindig kövesd a "Lentről Felfelé" (Bottom-Up) elvet!
+
+1. Lépés: Adatbázis és Konfiguráció (A fundamentum)
+
+Futtasd le a kapott .sql scripteket (táblák létrehozása, tesztadatok feltöltése).
+
+Ellenőrizd az adatbázis-kapcsolatot leíró fájlokat (pl. context.xml, application.properties, .env).
+
+Mire figyelj: A Driver neve (pl. com.mysql.cj.jdbc.Driver), a port, a jelszó és az adatbázis neve pontosan egyezzen. (Ha MySQL driver van megadva, az jó lesz MariaDB-hez is).
+
+2. Lépés: Repository / DAO réteg (Az adatbányászok)
+
+Itt írod meg a Java/Backend metódusokat, amik ténylegesen beszélnek az adatbázissal (SQL query-k futtatása).
+
+Mire figyelj (Nagyon fontos!): Mindig PreparedStatement-et használj a sima Statement helyett, hogy elkerüld az SQL injekciót! Mindig zárd le a kapcsolatokat (Java-ban használd a try-with-resources blokkot, hogy ne fogyjon el a MaxActive connection).
+
+3. Lépés: Service réteg (Az agy)
+
+Itt hívod meg a Repository-kat. Itt történik a számolás, ellenőrzés (pl. "Van-e elég pénze a felhasználónak?").
+
+Ide ne tegyél semmilyen HTTP kérést vagy HTML kódot.
+
+4. Lépés: Controller / REST Endpoint / Servlet (A pincér)
+
+Ez a réteg fogadja a böngészőből/frontendből érkező HTTP kéréseket (GET, POST).
+
+Átkonvertálja a bejövő JSON-t objektummá -> Odaadja a Service-nek -> A Service visszaadja az eredményt -> A Controller csinál belőle egy válasz JSON-t (vagy átirányít egy JSP/HTML oldalra).
+
+Mire figyelj: A megfelelő HTTP metódusok használata (Adatkérésre GET, mentésre POST).
+
+5. Lépés: Frontend / UI (A kirakat)
+
+JSP, HTML, vagy Svelte (JavaScript).
+
+Itt írod meg a gombnyomást (onClick), ami elsüt egy fetch() vagy AJAX hívást a Controllered felé.
+
+Itt kezeled le a hibaüzeneteket (pl. Alert ablak, ha a backend hibát dob).
+
+6. Lépés: Security (A portás)
+
+Ezt érdemes a legvégére hagyni, mikor már működik a rendszer (hogy fejlesztés közben ne szívassad magad a folyamatos bejelentkezésekkel).
+
+Login űrlap, Session kezelés, Tokenek.
+
+Mire figyelj: Mely URL-ek publikusak (pl. /login, /index.jsp), és melyek védettek.
+
+3. RÉSZ: Gyors tippek kódoláshoz 💡
+Ctrl+S (Mentés): Banális, de a hibák 20%-a abból fakad, hogy átírtad a konfigurációt, de nem mentetted el a fájlt a tesztelés előtt.
+
+Nézd a logokat! Ha hiba van a böngészőben (pl. Error 500), sose a böngészőt bámuld. Azonnal nyisd meg a szerver konzolját (Tomcat log, Node.js terminal, Docker logs), ott lesz leírva a pontos hiba (Stacktrace).
+
+Egyesével haladj: Ne írj meg 500 sor kódot egyben, hogy aztán leteszteld. Írd meg a gombnyomást -> console.log("Megnyomva"). Ha megy, írd meg a hívást -> console.log(valasz). Sokkal könnyebb megtalálni a hibát, ha apró lépésekben tesztelsz!

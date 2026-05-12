@@ -1,0 +1,77 @@
+1. Docker Gyorstalpaló (Parancsok)
+Ezeket a terminálban (IntelliJ alsó sáv, Terminal fül) kell kiadni, abban a mappában, ahol a docker-compose.yml van.
+
+docker-compose up -d : Elindítja az adatbázist a háttérben. Ezt csináld meg rögtön a vizsga elején!
+
+docker-compose down : Leállítja és letörli a konténereket. (A vizsga végén, takarításhoz jó).
+
+docker-compose logs -f : Ha valamiért nem indul az adatbázis, ez kiírja a hibákat (pl. foglalt a 3306-os port).
+
+docker-compose start / stop : Csak megállítja/elindítja a konténert, de nem törli le.
+
+2. Tipikus "Vizsga-gyilkos" Hibák és Gyors Szerviz
+🔴 Hiba: "Address localhost:8080 is already in use"
+Mit látsz? A Tomcat meg sem próbál elindulni, egyből kivágja ezt a piros hibát.
+
+Mi az ok? Beragadt egy korábbi szerver a háttérben.
+
+A Gyógymód:
+
+Nyomkodd meg a piros Stop (kocka) gombot az IntelliJ-ben.
+
+netstat -ano | findstr :5433
+
+Ha nem segít: Ctrl + Shift + Esc (Feladatkezelő) -> Keresd meg a java.exe vagy OpenJDK folyamatot -> Feladat befejezése.
+
+🔴 Hiba: Az IntelliJ "Port is not specified" hibát ordít
+Mit látsz? A Run Configurations ablakban alul piros hiba, és nem engedi elmenteni a Tomcatet.
+
+Mi az ok? IntelliJ grafikus bug.
+
+A Gyógymód:
+
+Kattints át a Deployment fülre -> + -> Artifact hozzáadása.
+
+Írd be a HTTPS portot (8443) és az AJP portot (8009).
+
+🔴 Hiba: "One or more listeners failed to start"
+Mit látsz? A Tomcat elindul, de a webalkalmazás telepítése (Deployment) elszáll, és 404-es hibát kapsz mindenre.
+
+Mi az ok? A JAAS beállításaid hiányoznak.
+
+A Gyógymód: Ellenőrizd, hogy az src/main/resources mappában pontosan ott van-e a jaas.config fájl, és a web.xml-ben be van-e kötve a Listener, ami ezt betölti.
+
+🔴 Hiba: 404 Not Found a /j_security_check oldalon
+Mit látsz? Beírod a böngészőbe a jelszót, rányomsz a loginra, és 404-es oldalra dob.
+
+Mi az ok? Közvetlenül nyitottad meg a login oldalt.
+
+A Gyógymód: Soha ne nyisd meg a login oldalt direktben! Mindig egy védett URL-t nyiss meg (pl. /food-list), és hagyd, hogy a Tomcat maga dobjon át a loginra. Így tudni fogja, hova kell visszairányítani.
+
+🔴 Hiba: Helyes jelszóra is "Login failed!"-et ír
+Mi az ok? A Tomcat nem tudja, hogy a te JAAS modulodat kell használnia.
+
+A Gyógymód: A META-INF/context.xml fájlból hiányzik a <Realm ...> beállítás. Tedd be a <Context> tagek közé!
+
+🔴 Hiba: FileNotFoundException a WSDL fájlra a konzolban
+Mit látsz? A gomb megnyomásakor "Hiba történt" ablak a böngészőben, a Java konzolban pedig hosszú piros szöveg, ami a C:\Users\... mappában keresi a .wsdl fájlt.
+
+Mi az ok? A kliens a gépeden (vinyón) keresi a WSDL-t, nem a weben.
+
+A Gyógymód: A FoodService Java osztályodban példányosításkor adj át neki egy URL-t:
+URL wsdl = new URL("http://localhost:8081/zh2-ws-feladat_war/ws/food?wsdl");
+FoodDataServiceService service = new FoodDataServiceService(wsdl, new QName(...));
+
+🔴 Hiba: Az adatbázis lekérdezések nem futnak le (vagy NullPointerException a Repository-ban)
+Mi az ok? A Tomcat nem ismeri a MariaDB-t.
+
+A Gyógymód: Bemásoltad a mariadb-java-client.jar fájlt a Tomcat lib mappájába? Ezt nagyon könnyű elfelejteni!
+
+3. Az "Arany Szabályok" (Ezt csekkold leadás előtt)
+A Portok jók? Fő alkalmazás: 8080. Web Service: 8081 (JMX: 1098).
+
+Az Application Context jó? A WS Tomcat beállításainál a Deployment fülön a context legyen: /zh2-ws-feladat_war (hogy a fő alkalmazás megtalálja).
+
+WSDL generálás: A pom.xml-ben a cxf-java2ws-plugin címe pontosan egyezik a fenti futtatási címmel?
+
+ZIP: A feladatot pontosan Név_Neptun.zip néven csomagoltad be, benne mindkét mappával?
