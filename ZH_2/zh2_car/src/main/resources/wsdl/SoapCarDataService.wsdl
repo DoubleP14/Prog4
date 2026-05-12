@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="carService" targetNamespace="hu.pte.mik.prog4.zh2" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="hu.pte.mik.prog4.zh2" xmlns:ns1="http://ws.zh2.prog4.mik.pte.hu/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+  <wsdl:import namespace="http://ws.zh2.prog4.mik.pte.hu/" location="CarDataService.wsdl">
+    </wsdl:import>
+  <wsdl:binding name="carServiceSoapBinding" type="ns1:CarDataService">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="getData">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="getData">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="getDataResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getRemoteKm">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="getRemoteKm">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="getRemoteKmResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="carService">
+    <wsdl:port name="SoapCarDataServicePort" binding="tns:carServiceSoapBinding">
+      <soap:address location="http://localhost:8080/zh2_war/ws/soapcardataservice"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

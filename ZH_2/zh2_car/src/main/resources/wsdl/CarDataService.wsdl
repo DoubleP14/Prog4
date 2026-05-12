@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="CarDataService" targetNamespace="http://ws.zh2.prog4.mik.pte.hu/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns1="http://ws.zh2.prog4.mik.pte.hu/">
+  <wsdl:types>
+<xs:schema xmlns:tns="http://ws.zh2.prog4.mik.pte.hu/" xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="unqualified" targetNamespace="http://ws.zh2.prog4.mik.pte.hu/" version="1.0">
+
+  <xs:element name="getData" type="tns:getData"/>
+
+  <xs:element name="getDataResponse" type="tns:getDataResponse"/>
+
+  <xs:element name="getRemoteKm" type="tns:getRemoteKm"/>
+
+  <xs:element name="getRemoteKmResponse" type="tns:getRemoteKmResponse"/>
+
+  <xs:complexType name="getData">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="arg0" type="tns:carDataRequest"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="carDataRequest">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="licensePlate" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="getDataResponse">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="return" type="tns:carDataResponse"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="carDataResponse">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="kilometer" type="xs:long"/>
+      <xs:element minOccurs="0" name="licensePlate" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="getRemoteKm">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="arg0" type="tns:carDataRequest"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="getRemoteKmResponse">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="return" type="tns:carDataResponse"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>
+  </wsdl:types>
+  <wsdl:message name="getData">
+    <wsdl:part name="parameters" element="ns1:getData">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getRemoteKmResponse">
+    <wsdl:part name="parameters" element="ns1:getRemoteKmResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getRemoteKm">
+    <wsdl:part name="parameters" element="ns1:getRemoteKm">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getDataResponse">
+    <wsdl:part name="parameters" element="ns1:getDataResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="CarDataService">
+    <wsdl:operation name="getData">
+      <wsdl:input name="getData" message="ns1:getData">
+    </wsdl:input>
+      <wsdl:output name="getDataResponse" message="ns1:getDataResponse">
+    </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getRemoteKm">
+      <wsdl:input name="getRemoteKm" message="ns1:getRemoteKm">
+    </wsdl:input>
+      <wsdl:output name="getRemoteKmResponse" message="ns1:getRemoteKmResponse">
+    </wsdl:output>
+    </wsdl:operation>
+  </wsdl:portType>
+</wsdl:definitions>
