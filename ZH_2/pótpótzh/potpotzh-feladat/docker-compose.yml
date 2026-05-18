@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  mariadb-potzh:
+    image: mariadb:10.7.8
+    environment:
+      MARIADB_USER: potpotzh_user
+      MARIADB_PASSWORD: PotPotZHPassword111
+      MARIADB_ROOT_PASSWORD: PotPotZHPassword111
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mariadb:/docker-entrypoint-initdb.d:Z
