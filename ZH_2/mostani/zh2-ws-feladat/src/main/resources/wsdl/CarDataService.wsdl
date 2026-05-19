@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="CarDataService" targetNamespace="http://service.ws.zh2_2026.prog4.mik.pte.hu/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://service.ws.zh2_2026.prog4.mik.pte.hu/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+  <wsdl:types>
+<xs:schema xmlns:tns="http://service.ws.zh2_2026.prog4.mik.pte.hu/" xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="unqualified" targetNamespace="http://service.ws.zh2_2026.prog4.mik.pte.hu/" version="1.0">
+
+  <xs:element name="getCarData" type="tns:getCarData"/>
+
+  <xs:element name="getCarDataResponse" type="tns:getCarDataResponse"/>
+
+  <xs:complexType name="getCarData">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="request" type="tns:carRequest"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="carRequest">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="model" type="xs:string"/>
+      <xs:element minOccurs="0" name="productionYear" type="xs:string"/>
+      <xs:element minOccurs="0" name="type" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="getCarDataResponse">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="return" type="tns:carResponse"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="carResponse">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="estimatedPrice" type="xs:long"/>
+      <xs:element minOccurs="0" name="fuelType" type="xs:string"/>
+      <xs:element minOccurs="0" name="soldCount" type="xs:long"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>
+  </wsdl:types>
+  <wsdl:message name="getCarData">
+    <wsdl:part name="parameters" element="tns:getCarData">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getCarDataResponse">
+    <wsdl:part name="parameters" element="tns:getCarDataResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="CarService">
+    <wsdl:operation name="getCarData">
+      <wsdl:input name="getCarData" message="tns:getCarData">
+    </wsdl:input>
+      <wsdl:output name="getCarDataResponse" message="tns:getCarDataResponse">
+    </wsdl:output>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="CarDataServiceSoapBinding" type="tns:CarService">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="getCarData">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="getCarData">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="getCarDataResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="CarDataService">
+    <wsdl:port name="SoapCarServicePort" binding="tns:CarDataServiceSoapBinding">
+      <soap:address location="http://localhost:8081/zh2-ws-feladat_war/ws/car"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
