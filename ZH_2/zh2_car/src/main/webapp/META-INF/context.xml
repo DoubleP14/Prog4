@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Context>
-    <Realm className="org.apache.catalina.realm.JAASRealm"
-           appName="zh2App"
-           userClassNames="hu.pte.mik.prog4.zh2.jaas.UserPrincipal"
-           roleClassNames="hu.pte.mik.prog4.zh2.jaas.RolePrincipal"/>
-</Context>
