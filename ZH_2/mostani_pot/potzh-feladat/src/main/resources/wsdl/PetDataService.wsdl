@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="SoapPetDataService" targetNamespace="http://ws.potzh_2026.prog4.mik.pte.hu/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://ws.potzh_2026.prog4.mik.pte.hu/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+  <wsdl:types>
+<xs:schema xmlns="http://ws.potzh_2026.prog4.mik.pte.hu/" xmlns:xs="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="unqualified" targetNamespace="http://ws.potzh_2026.prog4.mik.pte.hu/" version="1.0">
+  <xs:complexType name="petEntity">
+    <xs:sequence>
+      <xs:element name="age" type="xs:int"/>
+      <xs:element minOccurs="0" name="id" type="xs:long"/>
+      <xs:element minOccurs="0" name="ownerName" type="xs:string"/>
+      <xs:element minOccurs="0" name="petName" type="xs:string"/>
+      <xs:element minOccurs="0" name="species" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="getAllPets" type="getAllPets"/>
+  <xs:complexType name="getAllPets">
+    <xs:sequence/>
+  </xs:complexType>
+  <xs:element name="getAllPetsResponse" type="getAllPetsResponse"/>
+  <xs:complexType name="getAllPetsResponse">
+    <xs:sequence>
+      <xs:element form="qualified" maxOccurs="unbounded" minOccurs="0" name="return" type="petEntity"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
+  </wsdl:types>
+  <wsdl:message name="getAllPets">
+    <wsdl:part name="parameters" element="tns:getAllPets">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getAllPetsResponse">
+    <wsdl:part name="parameters" element="tns:getAllPetsResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="SoapPetDataServicePortType">
+    <wsdl:operation name="getAllPets">
+      <wsdl:input name="getAllPets" message="tns:getAllPets">
+    </wsdl:input>
+      <wsdl:output name="getAllPetsResponse" message="tns:getAllPetsResponse">
+    </wsdl:output>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="SoapPetDataServiceSoapBinding" type="tns:SoapPetDataServicePortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="getAllPets">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="getAllPets">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="getAllPetsResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="SoapPetDataService">
+    <wsdl:port name="SoapPetDataServicePort" binding="tns:SoapPetDataServiceSoapBinding">
+      <soap:address location="http://localhost:8080/potzh_feladat/ws/pet-data"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
