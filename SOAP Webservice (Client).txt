@@ -1,0 +1,66 @@
+SOAP Webservice (Client)
+Ha webservice-t kell írnod, ez a 3 lépés (Szerződés, Logika, Konfiguráció) mindenhol ugyanaz:
+
+1. A Szerződés (Interface)
+Minden szolgáltatásnak ezzel kell kezdenie. A targetNamespace kötelező a WSDL generáláshoz.
+
+Java
+package hu.pte.mik.prog4.ws;
+
+import jakarta.jws.WebMethod;
+import jakarta.jws.WebService;
+import jakarta.jws.soap.SOAPBinding;
+
+@WebService(targetNamespace = "hu.pte.mik.prog4.ws")
+@SOAPBinding(style = SOAPBinding.Style.DOCUMENT)
+public interface DataService {
+    @WebMethod
+    DataResponse getData(DataRequest request);
+}
+2. Az Implementáció (Logika)
+Itt történik az adatok generálása vagy az adatbázis lekérdezése.
+
+Java
+package hu.pte.mik.prog4.ws;
+
+import jakarta.jws.WebService;
+
+@WebService(endpointInterface = "hu.pte.mik.prog4.ws.DataService",
+            serviceName = "DataService",
+            targetNamespace = "hu.pte.mik.prog4.ws")
+public class SoapDataService implements DataService {
+
+    @Override
+    public DataResponse getData(DataRequest request) {
+        // Logika: Adatbázis hívás (Repository) vagy tesztadat generálás
+        // Példa: return new DataResponse(request.getId(), ThreadLocalRandom.current().nextLong(100));
+        return new DataResponse(request.getId(), 42L); 
+    }
+}
+3. Kliens Hívás (A másik alkalmazásból)
+Amikor a potzh-feladat hívja a ws-feladat-ot, ezt a mintát használd.
+
+Java
+import jakarta.xml.ws.BindingProvider;
+
+public void callService() {
+    // 1. A generált service példányosítása
+    DataService_Service service = new DataService_Service();
+    DataService port = service.getDataServicePort();
+
+    // 2. A port megcímzése (A "BindingProvider" trükk a portszám váltáshoz!)
+    String valosUrl = "http://localhost:8081/ws-app/ws/data";
+    ((BindingProvider) port).getRequestContext()
+            .put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, valosUrl);
+
+    // 3. Hívás
+    DataResponse response = port.getData(request);
+}
+Mit kell még ellenőrizned a vizsgán? (Checklist)
+Namespace egyezés: Figyeld meg, hogy az interfész (FoodDataService) és az implementáció (SoapFoodDataService) targetNamespace értéke pontosan ugyanaz. Ha elírod, a webservice nem indul el.
+
+Kliens generálás: A pom.xml-ben a jaxws-maven-plugin-nál a wsdlUrl mindig a futó szolgáltatásod WSDL címére mutasson (pl. http://localhost:8081/.../ws/data?wsdl).
+
+Adatbázis kapcsolat: Ha a SoapPetDataService hív egy PetRepository-t, akkor a context.xml-ednek tökéletesnek kell lennie, különben a webservice hívásakor "Connection refused" hibát kapsz.
+
+Ez a sablon az összes feltöltött SOAP példát lefedi. Ha ezt a 3 blokkot kimented, a SOAP-os feladatokkal nem lesz gondod!
