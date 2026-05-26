@@ -1,0 +1,91 @@
+============================================================
+PROG 4 - UNIVERZÁLIS "FIX 2-ES" VIZSGA PUSKA
+============================================================
+
+netstat -ano | findstr :5433
+
+
+0. LÉPÉS: BEÁLLÍTÁSOK
+---------------------
+1. MariaDB driver (.jar) legyen a C:\apache-tomcat\lib mappában!
+2. Docker: 'docker-compose up -d' az adatbázishoz.
+3. Portok: WebService=8081, Fő alkalmazás=8080 (IntelliJ Tomcat conf).
+4. JAAS VM Arg: -Djava.security.auth.login.config=C:\utvonal\resources\jaas.config
+
+1. MAPPASZERKEZET
+-----------------
+page.tag         -> webapp/WEB-INF/tags/
+save.jsp         -> webapp/
+PetService.java  -> java/hu/pte/mik/prog4/service/
+SavePetServlet.java -> java/hu/pte/mik/prog4/servlet/
+web.xml          -> webapp/WEB-INF/
+
+2. KÓDOK
+-------
+
+--- page.tag ---
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<header>
+    <nav>
+        <a href="index.jsp">Kezdőlap</a> | 
+        <a href="secured/list.jsp">Listázás</a> | 
+        <a href="logout">Kijelentkezés</a>
+    </nav>
+</header>
+<hr/>
+<jsp:doBody/>
+
+--- save.jsp ---
+<form action="save-pet" method="post">
+    Név: <input type="text" name="petName" required/><br/>
+    Faj: <input type="text" name="species" required/><br/>
+    Kor: <input type="number" name="age" required/><br/>
+    <button type="submit">Mentés</button>
+</form>
+
+--- PetService.java ---
+public class PetService {
+    private final PetRepository repo = new PetRepository();
+    public void save(PetEntity pet) { repo.save(pet); }
+    public List<PetEntity> findAll() { return repo.findAll(); }
+}
+
+--- SavePetServlet.java ---
+@WebServlet("/save-pet")
+public class SavePetServlet extends HttpServlet {
+    private final PetService service = new PetService();
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        req.setCharacterEncoding("UTF-8");
+        PetEntity pet = new PetEntity();
+        pet.setPetName(req.getParameter("petName"));
+        service.save(pet);
+        resp.sendRedirect("list.jsp");
+    }
+}
+
+--- SoapPetDataService.java ---
+@WebService(serviceName = "PetDataService")
+public class SoapPetDataService {
+    private final PetRepository repo = new PetRepository();
+    @WebMethod(operationName = "getAllPets")
+    public List<PetEntity> getAllPets() { return repo.findAll(); }
+}
+
+--- jaas.config ---
+MyCustomLogin {
+    hu.pte.mik.prog4.jaas.AuthenticationModule required;
+};
+
+3. MUNKASORREND (TÜLÉLŐ STRATÉGIA)
+----------------------------------
+1. 0-20p: Adatbázis indítás, context.xml, driver .jar.
+2. 20-50p: Repository & Service réteg (ez a 15 pontod alapja).
+3. 50-80p: Page Tag (navigáció) és Kijelentkezés.
+4. 80-120p: Rögzítő oldal (JSP form + SaveServlet).
+5. 120p+: Webservice alapok (interfész + implementáció).
+
+--- SZABÁLYOK ---
+- Mindig külön commitolj (beszédes commit message).
+- Használj 'develop' branchet.
+- Ha elakadsz, hagyd ki a REST/JAAS nehéz részeit, és menj tovább a SOAP-ra/listázásra.
+============================================================
