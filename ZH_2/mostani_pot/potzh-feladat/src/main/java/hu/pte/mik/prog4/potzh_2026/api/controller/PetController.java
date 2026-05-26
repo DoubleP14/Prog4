@@ -1,7 +1,8 @@
 package hu.pte.mik.prog4.potzh_2026.api.controller;
 
 import hu.pte.mik.prog4.potzh_2026.entity.PetEntity;
-import hu.pte.mik.prog4.potzh_2026.repository.PetRepository;
+// +++ Importáljuk a Service-t a Repository helyett +++
+import hu.pte.mik.prog4.potzh_2026.service.PetService;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -12,12 +13,15 @@ import jakarta.ws.rs.core.Response;
 @Consumes(MediaType.APPLICATION_JSON)
 public class PetController {
 
-    private final PetRepository petRepository = new PetRepository();
+    // +++ Service példányosítása +++
+    private final PetService petService = new PetService();
 
     @GET
     @Path("/{id}")
     public Response getPetById(@PathParam("id") Long id) {
-        PetEntity pet = petRepository.findById(id);
+        // +++ A Service-t hívjuk meg +++
+        PetEntity pet = petService.findById(id);
+
         if (pet != null) {
             return Response.ok(pet).build();
         } else {
