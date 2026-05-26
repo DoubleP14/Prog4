@@ -1,0 +1,279 @@
+1. A Tökéletes, Mindentudó pom.xml
+Ez egyszerre tudja a MariaDB-t, a REST API-t (JSON), a SOAP klienst, a JSTL felületet és a Bcrypt jelszótitkosítást is.
+
+XML
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>hu.pte.mik.prog4</groupId>
+    <artifactId>vizsga-sablon</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>war</packaging>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>6.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet.jsp</groupId>
+            <artifactId>jakarta.servlet.jsp-api</artifactId>
+            <version>3.1.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>apache-jstl</artifactId>
+            <version>11.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>3.1.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet</artifactId>
+            <version>3.1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-jackson</artifactId>
+            <version>3.1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>3.1.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sun.xml.ws</groupId>
+            <artifactId>jaxws-rt</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.sun.xml.ws</groupId>
+                <artifactId>jaxws-maven-plugin</artifactId>
+                <version>3.0.2</version>
+                <executions>
+                    <execution>
+                        <goals><goal>wsimport</goal></goals>
+                        <configuration>
+                            <wsdlUrls>
+                                <wsdlUrl>http://localhost:8081/ws-app/ws/data?wsdl</wsdlUrl>
+                            </wsdlUrls>
+                            <packageName>hu.pte.mik.prog4.kliens</packageName>
+                            <sourceDestDir>${project.build.directory}/generated-sources/wsimport</sourceDestDir>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+2. A "Szent Grál": Egyedi JAAS LoginModule (Ami adatbázisból olvas)
+A legnehezebb feladat a ZH-n a kód alapú (nem server.xml-es) hitelesítés. Ez a kód egyből az adatbázisból ellenőrzi a felhasználót és a Bcrypt jelszót.
+
+Java
+package hu.pte.mik.prog4.jaas;
+
+import org.mindrot.jbcrypt.BCrypt;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.security.auth.Subject;
+import javax.security.auth.callback.*;
+import javax.security.auth.login.LoginException;
+import javax.security.auth.spi.LoginModule;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Map;
+
+public class CustomLoginModule implements LoginModule {
+
+    private Subject subject;
+    private CallbackHandler callbackHandler;
+    private boolean loginSucceeded = false;
+    private String username;
+    private String role; // Az adatbázisból kiolvasott szerepkör
+
+    @Override
+    public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState, Map<String, ?> options) {
+        this.subject = subject;
+        this.callbackHandler = callbackHandler;
+    }
+
+    @Override
+    public boolean login() throws LoginException {
+        if (callbackHandler == null) throw new LoginException("Nincs CallbackHandler!");
+
+        NameCallback nameCallback = new NameCallback("Username: ");
+        PasswordCallback passwordCallback = new PasswordCallback("Password: ", false);
+
+        try {
+            callbackHandler.handle(new Callback[]{nameCallback, passwordCallback});
+            this.username = nameCallback.getName();
+            String password = new String(passwordCallback.getPassword());
+
+            // 1. Kapcsolódás az adatbázishoz a context.xml alapján
+            Context initContext = new InitialContext();
+            Context envContext = (Context) initContext.lookup("java:/comp/env");
+            DataSource ds = (DataSource) envContext.lookup("jdbc/Vizsga_MariaDB");
+
+            try (Connection conn = ds.getConnection()) {
+                // 2. Felhasználó és Szerepkör lekérdezése (A táblaneveket a ZH alapján írd át!)
+                String sql = "SELECT u.password, r.role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.username = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setString(1, username);
+                    ResultSet rs = stmt.executeQuery();
+
+                    if (rs.next()) {
+                        String hashedPasswordFromDb = rs.getString("password");
+                        // 3. Bcrypt ellenőrzés
+                        if (BCrypt.checkpw(password, hashedPasswordFromDb)) {
+                            this.role = rs.getString("role_name");
+                            loginSucceeded = true;
+                            return true;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new LoginException("Adatbázis hiba hitelesítés közben: " + e.getMessage());
+        }
+        
+        loginSucceeded = false;
+        throw new LoginException("Hibás felhasználónév vagy jelszó!");
+    }
+
+    @Override
+    public boolean commit() throws LoginException {
+        if (!loginSucceeded) return false;
+        // Itt adjuk hozzá a Principalokat (Felhasználó + Szerepkör) a Subjecthez
+        subject.getPrincipals().add(new CustomPrincipal(username));
+        subject.getPrincipals().add(new CustomRolePrincipal(role));
+        return true;
+    }
+
+    @Override
+    public boolean abort() throws LoginException { return false; }
+
+    @Override
+    public boolean logout() throws LoginException {
+        subject.getPrincipals().clear();
+        return true;
+    }
+}
+
+3. Univerzális Alap Repository (JDBC)
+Hogy ne kelljen minden adatbázis híváshoz újraírni a csatlakozást. Ebből a BaseRepository-ból származtathatod le a CarRepository vagy PetRepository osztályokat.
+
+Java
+package hu.pte.mik.prog4.repository;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.sql.DataSource;
+import java.sql.Connection;
+
+public abstract class BaseRepository {
+    
+    // Ezt a nevet mindig cseréld ki a vizsgafeladat context.xml-jében lévőre!
+    private static final String JNDI_NAME = "java:/comp/env/jdbc/Vizsga_MariaDB";
+
+    protected Connection getConnection() {
+        try {
+            Context initContext = new InitialContext();
+            DataSource ds = (DataSource) initContext.lookup(JNDI_NAME);
+            return ds.getConnection();
+        } catch (Exception e) {
+            throw new RuntimeException("Nem sikerült kapcsolódni az adatbázishoz!", e);
+        }
+    }
+}
+
+4. A Teljes REST Controller (JSON)
+Egy teljesen kész Controller a "Híd" megvalósításához (lekérdezés adatbázisból + lekérdezés a távoli SOAP webservice-ből).
+
+Java
+package hu.pte.mik.prog4.controller;
+
+import hu.pte.mik.prog4.entity.SablonEntity;
+import hu.pte.mik.prog4.service.SablonService;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.util.List;
+
+@Path("/api/sablon") // Például: /api/cars vagy /api/pets
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class SablonController {
+
+    private final SablonService service = new SablonService();
+
+    // 1. Összes lekérdezése
+    @GET
+    public Response getAll() {
+        List<SablonEntity> lista = service.findAll();
+        return Response.ok(lista).build();
+    }
+
+    // 2. Lekérdezés ID alapján
+    @GET
+    @Path("/{id}")
+    public Response getById(@PathParam("id") Long id) {
+        SablonEntity entity = service.findById(id);
+        if (entity != null) {
+            return Response.ok(entity).build();
+        } 
+        return Response.status(Response.Status.NOT_FOUND).entity("{\"error\":\"Nem található\"}").build();
+    }
+
+    // 3. Mentés / Létrehozás (POST)
+    @POST
+    public Response create(SablonEntity entity) {
+        SablonEntity saved = service.save(entity);
+        return Response.status(Response.Status.CREATED).entity(saved).build();
+    }
+
+    // 4. A "Híd" végpont: Ez hívja meg a SOAP webservice-t az extra adatokért
+    @GET
+    @Path("/{id}/extra-data")
+    public Response getExtraDataFromWebservice(@PathParam("id") String id) {
+        try {
+            // Ez a metódus a háttérben SOAP-on keresztül a 8081-es szervert hívja meg
+            String extraData = service.getRemoteDataViaSoap(id); 
+            return Response.ok("{\"extraData\": \"" + extraData + "\"}").build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                           .entity("{\"error\":\"Webservice hiba: " + e.getMessage() + "\"}")
+                           .build();
+        }
+    }
+}
