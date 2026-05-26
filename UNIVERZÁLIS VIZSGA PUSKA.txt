@@ -1,0 +1,170 @@
+# PROG 4 - UNIVERZÁLIS VIZSGA PUSKA
+
+--- 1. POM.XML FÜGGŐSÉGEK ÉS PLUGINOK ---
+
+<dependency>
+    <groupId>org.mariadb.jdbc</groupId>
+    <artifactId>mariadb-java-client</artifactId>
+    <version>3.1.3</version>
+</dependency>
+
+<dependency>
+    <groupId>jakarta.servlet.jsp</groupId>
+    <artifactId>jakarta.servlet.jsp-api</artifactId>
+    <version>3.1.1</version>
+    <scope>provided</scope> </dependency>
+<dependency>
+    <groupId>org.eclipse.jetty</groupId>
+    <artifactId>apache-jstl</artifactId>
+    <version>11.0.0</version>
+    </dependency>
+
+<dependency>
+    <groupId>com.sun.xml.ws</groupId>
+    <artifactId>jaxws-rt</artifactId>
+    <version>3.0.2</version>
+</dependency>
+<dependency>
+    <groupId>org.glassfish.jersey.media</groupId>
+    <artifactId>jersey-media-json-jackson</artifactId>
+    <version>3.0.4</version>
+</dependency>
+
+<plugin>
+    <groupId>com.sun.xml.ws</groupId>
+    <artifactId>jaxws-maven-plugin</artifactId>
+    <version>3.0.2</version>
+    <executions>
+        <execution>
+            <goals><goal>wsimport</goal></goals>
+            <configuration>
+                <wsdlUrls><wsdlUrl>http://localhost:8081/ws-app/ws/valami?wsdl</wsdlUrl></wsdlUrls>
+                <packageName>hu.pte.mik.prog4.kliens</packageName>
+                <sourceDestDir>${project.build.directory}/generated-sources/wsimport</sourceDestDir>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+
+
+--- 2. ADATBÁZIS: META-INF/context.xml ---
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+    <Resource name="jdbc/Vizsga_MariaDB" type="javax.sql.DataSource"
+              driverClassName="org.mariadb.jdbc.Driver"
+              factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
+              url="jdbc:mariadb://localhost:3306/adatbazis_neve"
+              username="user_nev" password="Password111"
+              maxActive="20" maxIdle="10" maxWait="-1" />
+</Context>
+
+
+--- 3. BIZTONSÁG: web.xml (Form Login és Védelem) ---
+<security-constraint>
+    <web-resource-collection>
+        <web-resource-name>VedettOldalak</web-resource-name>
+        <url-pattern>/secured/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+        <role-name>admin</role-name>
+    </auth-constraint>
+</security-constraint>
+
+<login-config>
+    <auth-method>FORM</auth-method>
+    <realm-name>MyRealm</realm-name>
+    <form-login-config>
+        <form-login-page>/login.html</form-login-page>
+        <form-error-page>/login_failed.html</form-error-page>
+    </form-login-config>
+</login-config>
+
+<security-role>
+    <role-name>admin</role-name>
+</security-role>
+
+
+--- 4. JAX-RS (REST API Controller) ---
+
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/api/data")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class MyRestController {
+
+    private final MyService service = new MyService();
+
+    @GET
+    @Path("/{id}")
+    public Response getById(@PathParam("id") Long id) {
+        MyEntity data = service.findById(id);
+        if (data != null) {
+            return Response.ok(data).build();
+        }
+        return Response.status(Response.Status.NOT_FOUND).entity("{\"error\":\"Nem talalhato\"}").build();
+    }
+
+    @POST
+    public Response create(MyEntity entity) {
+        service.save(entity);
+        return Response.status(Response.Status.CREATED).entity(entity).build();
+    }
+}
+
+
+--- 5. JAX-WS (SOAP Kliens hívása dinamikus URL-lel) ---
+
+import jakarta.xml.ws.BindingProvider;
+
+public String callRemoteWebService(String id) {
+    MyRemoteService_Service service = new MyRemoteService_Service();
+    MyRemoteService port = service.getMyRemoteServicePort();
+
+    String valosUrl = "http://localhost:8081/ws-app/ws/remote-data";
+    ((BindingProvider) port).getRequestContext()
+            .put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, valosUrl);
+
+    return port.getRemoteData(id);
+}
+
+
+--- 6. SERVLET: A "PRG" Mentés (Post-Redirect-Get) ---
+
+@WebServlet(urlPatterns = "/save-data")
+public class SaveServlet extends HttpServlet {
+    private final MyService service = new MyService();
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        req.setCharacterEncoding("UTF-8");
+        
+        try {
+            String name = req.getParameter("name");
+            service.save(new MyEntity(name));
+            resp.sendRedirect(req.getContextPath() + "/list");
+        } catch (Exception e) {
+            req.setAttribute("hiba", "Rossz adat!");
+            req.getRequestDispatcher("/form.jsp").forward(req, resp);
+        }
+    }
+}
+
+
+--- 7. JSP és JSTL (A Nézet) ---
+
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+
+<%@ taglib prefix="t" tagdir="/WEB-INF/tags" %>
+
+<table border="1">
+    <tr><th>ID</th><th>Név</th></tr>
+    <c:forEach var="item" items="${adatok}">
+        <tr>
+            <td>${item.id}</td>
+            <td>${item.nev}</td>
+        </tr>
+    </c:forEach>
+</table>
