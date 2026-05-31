@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="HallgatoWebService" targetNamespace="http://ws.potpotzh_2026.prog4.mik.pte.hu/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://ws.potpotzh_2026.prog4.mik.pte.hu/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+  <wsdl:types>
+<xs:schema xmlns="http://ws.potpotzh_2026.prog4.mik.pte.hu/" xmlns:xs="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="unqualified" targetNamespace="http://ws.potpotzh_2026.prog4.mik.pte.hu/" version="1.0">
+  <xs:complexType name="hallgato">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="egyetemiAtlag" type="xs:double"/>
+      <xs:element minOccurs="0" name="felev" type="xs:int"/>
+      <xs:element minOccurs="0" name="hallgatoNev" type="xs:string"/>
+      <xs:element minOccurs="0" name="id" type="xs:int"/>
+      <xs:element minOccurs="0" name="szak" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="createHallgato" type="createHallgato"/>
+  <xs:complexType name="createHallgato">
+    <xs:sequence>
+      <xs:element form="qualified" minOccurs="0" name="hallgato" type="hallgato"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="createHallgatoResponse" type="createHallgatoResponse"/>
+  <xs:complexType name="createHallgatoResponse">
+    <xs:sequence/>
+  </xs:complexType>
+  <xs:element name="getHallgatoById" type="getHallgatoById"/>
+  <xs:complexType name="getHallgatoById">
+    <xs:sequence>
+      <xs:element form="qualified" name="id" type="xs:int"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="getHallgatoByIdResponse" type="getHallgatoByIdResponse"/>
+  <xs:complexType name="getHallgatoByIdResponse">
+    <xs:sequence>
+      <xs:element form="qualified" minOccurs="0" name="return" type="hallgato"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="getHallgatok" type="getHallgatok"/>
+  <xs:complexType name="getHallgatok">
+    <xs:sequence/>
+  </xs:complexType>
+  <xs:element name="getHallgatokResponse" type="getHallgatokResponse"/>
+  <xs:complexType name="getHallgatokResponse">
+    <xs:sequence>
+      <xs:element form="qualified" maxOccurs="unbounded" minOccurs="0" name="return" type="hallgato"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="deleteHallgato" type="deleteHallgato"/>
+  <xs:complexType name="deleteHallgato">
+    <xs:sequence>
+      <xs:element form="qualified" name="id" type="xs:int"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="deleteHallgatoResponse" type="deleteHallgatoResponse"/>
+  <xs:complexType name="deleteHallgatoResponse">
+    <xs:sequence/>
+  </xs:complexType>
+</xs:schema>
+  </wsdl:types>
+  <wsdl:message name="getHallgatokResponse">
+    <wsdl:part name="parameters" element="tns:getHallgatokResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="deleteHallgatoResponse">
+    <wsdl:part name="parameters" element="tns:deleteHallgatoResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getHallgatoByIdResponse">
+    <wsdl:part name="parameters" element="tns:getHallgatoByIdResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getHallgatoById">
+    <wsdl:part name="parameters" element="tns:getHallgatoById">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getHallgatok">
+    <wsdl:part name="parameters" element="tns:getHallgatok">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createHallgatoResponse">
+    <wsdl:part name="parameters" element="tns:createHallgatoResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="createHallgato">
+    <wsdl:part name="parameters" element="tns:createHallgato">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="deleteHallgato">
+    <wsdl:part name="parameters" element="tns:deleteHallgato">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="HallgatoWebServicePortType">
+    <wsdl:operation name="createHallgato">
+      <wsdl:input name="createHallgato" message="tns:createHallgato">
+    </wsdl:input>
+      <wsdl:output name="createHallgatoResponse" message="tns:createHallgatoResponse">
+    </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getHallgatoById">
+      <wsdl:input name="getHallgatoById" message="tns:getHallgatoById">
+    </wsdl:input>
+      <wsdl:output name="getHallgatoByIdResponse" message="tns:getHallgatoByIdResponse">
+    </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getHallgatok">
+      <wsdl:input name="getHallgatok" message="tns:getHallgatok">
+    </wsdl:input>
+      <wsdl:output name="getHallgatokResponse" message="tns:getHallgatokResponse">
+    </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="deleteHallgato">
+      <wsdl:input name="deleteHallgato" message="tns:deleteHallgato">
+    </wsdl:input>
+      <wsdl:output name="deleteHallgatoResponse" message="tns:deleteHallgatoResponse">
+    </wsdl:output>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="HallgatoWebServiceSoapBinding" type="tns:HallgatoWebServicePortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="createHallgato">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="createHallgato">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="createHallgatoResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getHallgatoById">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="getHallgatoById">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="getHallgatoByIdResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getHallgatok">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="getHallgatok">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="getHallgatokResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="deleteHallgato">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="deleteHallgato">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="deleteHallgatoResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="HallgatoWebService">
+    <wsdl:port name="HallgatoWebServicePort" binding="tns:HallgatoWebServiceSoapBinding">
+      <soap:address location="http://localhost:8080/potpotzh-feladat/ws/hallgato"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
