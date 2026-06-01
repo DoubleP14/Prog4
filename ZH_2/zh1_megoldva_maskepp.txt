@@ -1,0 +1,480 @@
+Örömmel! Íme a backend alkalmazás (zh1-feladat) teljes forráskódja és szerkezete.
+
+A feladatleírásban szereplő <Resource> definíció (javax.sql.DataSource) alapján az alkalmazás a Java EE / javax névteret használja (pl. Tomcat 9 környezet), az adatbázis-kezelést pedig tiszta JDBC és JNDI használatával valósítjuk meg, ami a leggyakoribb az ilyen jellegű egyetemi feladatoknál.
+
+Mappa- és fájlszerkezet (zh1-feladat)
+Plaintext
+zh1-feladat/
+├── pom.xml
+└── src/
+    └── main/
+        ├── java/
+        │   └── hu/
+        │       └── prog4/
+        │           └── zh1/
+        │               ├── entity/
+        │               │   └── Product.java
+        │               ├── repository/
+        │               │   └── ProductRepository.java
+        │               ├── service/
+        │               │   └── ProductService.java
+        │               ├── servlet/
+        │               │   ├── ProductApiServlet.java (REST API)
+        │               │   └── ProductListServlet.java (Servlet alapú listázás)
+        │               └── webservice/
+        │                   └── ProductWebService.java
+        └── webapp/
+            └── WEB-INF/
+                ├── web.xml
+                └── context.xml
+1. Konfigurációs fájlok
+pom.xml
+Biztosítja a Servlet, JAX-WS (Webservice), JAXB (XML export) és a JSON kezeléshez szükséges függőségeket.
+
+XML
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>hu.prog4.zh1</groupId>
+    <artifactId>zh1-feladat</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>war</packaging>
+
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>javax</groupId>
+            <artifactId>javaee-web-api</artifactId>
+            <version>8.0.1</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.xml.ws</groupId>
+            <artifactId>jaxws-api</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>zh1-feladat</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.3.2</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+src/main/webapp/WEB-INF/context.xml
+Itt definiáljuk a lokális erőforrás-hivatkozást a Tomcat számára.
+
+XML
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+    <ResourceLink name="jdbc/ZH1_product_MariaDB"
+                  global="jdbc/ZH1_product_MariaDB"
+                  type="javax.sql.DataSource" />
+</Context>
+src/main/webapp/WEB-INF/web.xml
+Regisztrálja a Servleteket és a SOAP Webservice-t.
+
+XML
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee_web-app_4_0.xsd"
+         version="4.0">
+
+    <servlet>
+        <servlet-name>ProductApiServlet</servlet-name>
+        <servlet-class>hu.prog4.zh1.servlet.ProductApiServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProductApiServlet</servlet-name>
+        <url-pattern>/api/products/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ProductListServlet</servlet-name>
+        <servlet-class>hu.prog4.zh1.servlet.ProductListServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProductListServlet</servlet-name>
+        <url-pattern>/list</url-pattern>
+    </servlet-mapping>
+
+    <session-config>
+        <session-timeout>30</session-timeout>
+    </session-config>
+</web-app>
+2. Üzleti logika (Entity, Repository, Service)
+hu/prog4/zh1/entity/Product.java
+Az XML annotációkkal ellátott POJO osztály.
+
+Java
+package hu.prog4.zh1.entity;
+
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlElement;
+
+@XmlRootElement(name = "product")
+public class Product {
+    private Long id;
+    private String name;
+    private Integer price;
+    private String description;
+
+    public Product() {}
+
+    public Product(Long id, String name, Integer price, String description) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
+        this.description = description;
+    }
+
+    @XmlElement
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    @XmlElement
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    @XmlElement
+    public Integer getPrice() { return price; }
+    public void setPrice(Integer price) { this.price = price; }
+
+    @XmlElement
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+}
+hu/prog4/zh1/repository/ProductRepository.java
+Tiszta JDBC megvalósítás JNDI DataSource-szal a CRUD műveletekhez.
+
+Java
+package hu.prog4.zh1.repository;
+
+import hu.prog4.zh1.entity.Product;
+import javax.naming.InitialContext;
+import javax.sql.DataSource;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ProductRepository {
+
+    private Connection getConnection() throws Exception {
+        InitialContext ctx = new InitialContext();
+        DataSource ds = (DataSource) ctx.lookup("java:comp/env/jdbc/ZH1_product_MariaDB");
+        return ds.getConnection();
+    }
+
+    public List<Product> findAll() {
+        List<Product> products = new ArrayList<>();
+        String sql = "SELECT * FROM products";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                products.add(new Product(
+                        rs.getLong("id"),
+                        rs.getString("name"),
+                        rs.getInt("price"),
+                        rs.getString("description")
+                ));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return products;
+    }
+
+    public Product findById(Long id) {
+        String sql = "SELECT * FROM products WHERE id = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Product(
+                            rs.getLong("id"),
+                            rs.getString("name"),
+                            rs.getInt("price"),
+                            rs.getString("description")
+                    );
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public void save(Product product) {
+        String sql = "INSERT INTO products (name, price, description) VALUES (?, ?, ?)";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, product.getName());
+            ps.setInt(2, product.getPrice());
+            ps.setString(3, product.getDescription());
+            ps.executeUpdate();
+            try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    product.setId(generatedKeys.getLong(1));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void update(Product product) {
+        String sql = "UPDATE products SET name = ?, price = ?, description = ? WHERE id = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, product.getName());
+            ps.setInt(2, product.getPrice());
+            ps.setString(3, product.getDescription());
+            ps.setLong(4, product.getId());
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void delete(Long id) {
+        String sql = "DELETE FROM products WHERE id = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+hu/prog4/zh1/service/ProductService.java
+A szerviz réteg, amely tartalmazza az eredeti feladat által kért XML-be konvertáló és konzolra logoló metódust is.
+
+Java
+package hu.prog4.zh1.service;
+
+import hu.prog4.zh1.entity.Product;
+import hu.prog4.zh1.repository.ProductRepository;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Marshaller;
+import java.io.StringWriter;
+import java.util.List;
+
+public class ProductService {
+    private final ProductRepository repository = new ProductRepository();
+
+    public List<Product> getAllProducts() { return repository.findAll(); }
+    public Product getProductById(Long id) { return repository.findById(id); }
+    public void saveProduct(Product product) { repository.save(product); }
+    public void updateProduct(Product product) { repository.update(product); }
+    public void deleteProduct(Long id) { repository.delete(id); }
+
+    public void convertToXml(Product product) {
+        if (product == null) return;
+        try {
+            JAXBContext context = JAXBContext.newInstance(Product.class);
+            Marshaller marshaller = context.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+
+            StringWriter sw = new StringWriter();
+            marshaller.marshal(product, sw);
+            
+            System.out.println("--- XML EXPORT FOR PRODUCT " + product.getId() + " ---");
+            System.out.println(sw.toString());
+            System.out.println("----------------------------------------");
+        } catch (Exception e) {
+            System.err.println("Hiba az XML konverzió során: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}
+3. Végpontok (Webservice & REST API)
+hu/prog4/zh1/webservice/ProductWebService.java
+SOAP alapú webszolgáltatás a kliensalkalmazás kiszolgálásához.
+
+Java
+package hu.prog4.zh1.webservice;
+
+import hu.prog4.zh1.entity.Product;
+import hu.prog4.zh1.service.ProductService;
+import javax.jws.WebMethod;
+import javax.jws.WebService;
+import java.util.List;
+
+@WebService(serviceName = "ProductWebService")
+public class ProductWebService {
+    private final ProductService service = new ProductService();
+
+    @WebMethod
+    public List<Product> listProducts() {
+        return service.getAllProducts();
+    }
+
+    @WebMethod
+    public Product getProduct(Long id) {
+        return service.getProductById(id);
+    }
+
+    @WebMethod
+    public void createProduct(Product product) {
+        service.saveProduct(product);
+    }
+
+    @WebMethod
+    public void deleteProduct(Long id) {
+        service.deleteProduct(id);
+    }
+}
+hu/prog4/zh1/servlet/ProductApiServlet.java
+Egy egyszerű REST API végpont JSON formátumú adatokhoz (pl. /api/products).
+
+Java
+package hu.prog4.zh1.servlet;
+
+import com.google.gson.Gson;
+import hu.prog4.zh1.entity.Product;
+import hu.prog4.zh1.service.ProductService;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
+
+public class ProductApiServlet extends HttpServlet {
+    private final ProductService service = new ProductService();
+    private final Gson gson = new Gson();
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+
+        String pathInfo = req.getPathInfo();
+        if (pathInfo == null || pathInfo.equals("/")) {
+            List<Product> products = service.getAllProducts();
+            resp.getWriter().write(gson.toJson(products));
+        } else {
+            try {
+                Long id = Long.parseLong(pathInfo.substring(1));
+                Product p = service.getProductById(id);
+                if (p != null) {
+                    resp.getWriter().write(gson.toJson(p));
+                } else {
+                    resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                }
+            } catch (NumberFormatException e) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            }
+        }
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.setCharacterEncoding("UTF-8");
+        Product product = gson.fromJson(req.getReader(), Product.class);
+        service.saveProduct(product);
+        resp.setStatus(HttpServletResponse.SC_CREATED);
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String pathInfo = req.getPathInfo();
+        if (pathInfo != null && !pathInfo.equals("/")) {
+            try {
+                Long id = Long.parseLong(pathInfo.substring(1));
+                service.deleteProduct(id);
+                resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
+            } catch (NumberFormatException e) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            }
+        } else {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        }
+    }
+}
+4. Felület (Servlet-alapú listázás)
+hu/prog4/zh1/servlet/ProductListServlet.java
+A feladatleírás alapján ennek az alkalmazásnak is kell egy felület, amit tisztán Servlet generál (NEM JSP!), és a termékeket ár szerinti sorrendben listázza.
+
+Java
+package hu.prog4.zh1.servlet;
+
+import hu.prog4.zh1.entity.Product;
+import hu.prog4.zh1.service.ProductService;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Comparator;
+import java.util.List;
+
+public class ProductListServlet extends HttpServlet {
+    private final ProductService service = new ProductService();
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setContentType("text/html");
+        resp.setCharacterEncoding("UTF-8");
+
+        List<Product> products = service.getAllProducts();
+        // Ár szerinti növekvő sorrendbe rendezés
+        products.sort(Comparator.comparing(Product::getPrice));
+
+        PrintWriter out = resp.getWriter();
+        out.println("<!DOCTYPE html>");
+        out.println("<html>");
+        out.println("<head><title>Backend Terméklista</title></head>");
+        out.println("<body>");
+        out.println("<h1>Termékek listája (Ár szerint rendezve - Servlet View)</h1>");
+        out.println("<table border='1' cellpadding='5'>");
+        out.println("<tr><th>ID</th><th>Név</th><th>Ár (HUF)</th><th>Leírás</th></tr>");
+
+        for (Product p : products) {
+            out.println("<tr>");
+            out.println("<td>" + p.getId() + "</td>");
+            out.println("<td>" + p.getName() + "</td>");
+            out.println("<td>" + p.getPrice() + "</td>");
+            out.println("<td>" + p.getDescription() + "</td>");
+            out.println("</tr>");
+        }
+
+        out.println("</table>");
+        out.println("<p><a href='" + req.getContextPath() + "/api/products'>REST API megtekintése JSON formátumban</a></p>");
+        out.println("</body>");
+        out.println("</html>");
+    }
+}
+Ezzel a backend (zh1-feladat) készen áll. Képes elkapni az adatbázis kapcsolatot, kiszolgálja a SOAP és REST kéréseket, és van egy tiszta Servlet alapú listázó oldala is.
+
+Ha megvagyunk, mehetünk tovább a zh1-jsp-feladat kliensoldali webalkalmazásra (JSP Tag-ek, Cookie alapú kedvencek, Karakter-szűrő Filter és a FORM alapú Security beállítása)?
